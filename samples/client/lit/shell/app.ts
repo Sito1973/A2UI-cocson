@@ -14,6 +14,9 @@
  limitations under the License.
  */
 
+// CRITICAL: Patch fetch before ANY other imports to ensure HTTPS enforcement
+import "./fetch-patch.js";
+
 import { SignalWatcher } from "@lit-labs/signals";
 import { provide } from "@lit/context";
 import {
