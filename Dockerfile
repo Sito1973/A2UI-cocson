@@ -135,7 +135,7 @@ stderr_logfile_maxbytes=0
 [program:agent]
 command=python __main__.py --host 0.0.0.0 --port 10002
 directory=/app/restaurant_finder
-environment=GEMINI_API_KEY="%(ENV_GEMINI_API_KEY)s"
+environment=GEMINI_API_KEY="%(ENV_GEMINI_API_KEY)s",PUBLIC_URL="%(ENV_PUBLIC_URL)s"
 autostart=true
 autorestart=true
 stdout_logfile=/dev/stdout
@@ -149,6 +149,7 @@ EXPOSE 80
 
 # Variables de entorno
 ENV GEMINI_API_KEY=""
+ENV PUBLIC_URL=""
 
 # Comando de inicio
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

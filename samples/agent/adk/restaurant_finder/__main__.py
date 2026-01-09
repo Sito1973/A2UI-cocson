@@ -40,7 +40,8 @@ class MissingAPIKeyError(Exception):
 @click.command()
 @click.option("--host", default="localhost")
 @click.option("--port", default=10002)
-def main(host, port):
+@click.option("--public-url", default=None, help="Public URL for the agent (used in agent-card)")
+def main(host, port, public_url):
     try:
         # Check for API key only if Vertex AI is not configured
         if not os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "TRUE":
@@ -61,7 +62,8 @@ def main(host, port):
             examples=["Find me the top 10 chinese restaurants in the US"],
         )
 
-        base_url = f"http://{host}:{port}"
+        # Use public URL if provided, otherwise use env var, otherwise construct from host:port
+        base_url = public_url or os.getenv("PUBLIC_URL") or f"http://{host}:{port}"
 
         agent_card = AgentCard(
             name="Restaurant Agent",
@@ -89,7 +91,7 @@ def main(host, port):
 
         app.add_middleware(
             CORSMiddleware,
-            allow_origin_regex=r"http://localhost:\d+",
+            allow_origins=["*"],  # Allow all origins in production
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
