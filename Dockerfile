@@ -7,7 +7,7 @@
 FROM node:22-alpine AS frontend-builder
 
 # Cache buster - cambiar este valor para forzar rebuild
-ARG CACHE_BUST=v7
+ARG CACHE_BUST=v8
 
 WORKDIR /app
 
