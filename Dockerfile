@@ -7,7 +7,7 @@
 FROM node:22-alpine AS frontend-builder
 
 # Cache buster - cambiar este valor para forzar rebuild
-ARG CACHE_BUST=v9
+ARG CACHE_BUST=v10
 
 WORKDIR /app
 
@@ -109,14 +109,53 @@ server {
         add_header Content-Security-Policy "upgrade-insecure-requests" always;
     }
 
-    # API proxy al agente Python
-    location /api/ {
+    # API root - handle GET requests (SDK connectivity check)
+    location = /api/ {
+        # For GET: return agent info (SDK makes GET to check connectivity)
+        limit_except POST {
+            add_header Content-Type "application/json" always;
+            add_header Access-Control-Allow-Origin "*" always;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "*" always;
+            return 200 '{"jsonrpc":"2.0","result":{"status":"ready","name":"A2A Agent"},"id":null}';
+        }
+
+        # For POST: proxy to agent
         proxy_pass http://127.0.0.1:10002/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Content-Type "application/json";
         proxy_buffering off;
         proxy_read_timeout 86400s;
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    # API proxy - all other paths (agent-card, etc)
+    location /api/ {
+        # Handle OPTIONS for CORS preflight
+        if (\$request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin "*";
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+            add_header Access-Control-Allow-Headers "*";
+            return 204;
+        }
+
+        proxy_pass http://127.0.0.1:10002/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
+        proxy_read_timeout 86400s;
+
+        # CORS headers for responses
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "*" always;
     }
 }
 EOF
