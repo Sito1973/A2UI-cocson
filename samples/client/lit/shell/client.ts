@@ -38,13 +38,23 @@ export class A2UIClient {
       // Default to localhost:10002 if no URL provided (fallback for restaurant app default)
       const baseUrl = this.#serverUrl || "http://localhost:10002";
 
+      console.log('[A2UI Client] Creating client with baseUrl:', baseUrl);
+      console.log('[A2UI Client] Agent card URL:', `${baseUrl}/.well-known/agent-card.json`);
+
       this.#client = await A2AClient.fromCardUrl(
         `${baseUrl}/.well-known/agent-card.json`,
         {
           fetchImpl: async (url, init) => {
+            // Force HTTPS for non-localhost URLs
+            let finalUrl = url;
+            if (typeof url === 'string' && !url.includes('localhost') && url.startsWith('http://')) {
+              finalUrl = url.replace('http://', 'https://');
+              console.log('[A2UI Client] Forced HTTPS:', finalUrl);
+            }
+            console.log('[A2UI Client] Fetching:', finalUrl);
             const headers = new Headers(init?.headers);
             headers.set("X-A2A-Extensions", "https://a2ui.org/a2a-extension/a2ui/v0.8");
-            return fetch(url, { ...init, headers });
+            return fetch(finalUrl, { ...init, headers });
           }
         }
       );
