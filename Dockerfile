@@ -7,7 +7,7 @@
 FROM node:22-alpine AS frontend-builder
 
 # Cache buster - cambiar este valor para forzar rebuild
-ARG CACHE_BUST=v8
+ARG CACHE_BUST=v9
 
 WORKDIR /app
 
@@ -96,6 +96,8 @@ server {
         alias /var/www/html/shell;
         index index.html;
         try_files \$uri \$uri/ /shell/index.html;
+        # Force browser to upgrade HTTP to HTTPS
+        add_header Content-Security-Policy "upgrade-insecure-requests" always;
     }
 
     # Editor
@@ -103,6 +105,8 @@ server {
         alias /var/www/html/editor;
         index index.html;
         try_files \$uri \$uri/ /editor/index.html;
+        # Force browser to upgrade HTTP to HTTPS
+        add_header Content-Security-Policy "upgrade-insecure-requests" always;
     }
 
     # API proxy al agente Python
