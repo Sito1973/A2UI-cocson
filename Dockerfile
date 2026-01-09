@@ -17,15 +17,15 @@ RUN npm install
 RUN mkdir -p src/0.8/schemas && cp ../../specification/0.8/json/*.json src/0.8/schemas/
 RUN npm run build:tsc
 
-# Construir el Editor
+# Construir el Editor (con base path para servir desde /editor/)
 WORKDIR /app/tools/editor
 RUN npm install
-RUN npx vite build --outDir dist-static
+RUN npx vite build --outDir dist-static --base=/editor/
 
-# Construir el Shell
+# Construir el Shell (con base path para servir desde /shell/)
 WORKDIR /app/samples/client/lit/shell
 RUN npm install
-RUN npx vite build --outDir dist-static
+RUN npx vite build --outDir dist-static --base=/shell/
 
 # ========================================
 # Stage 2: Production Image
@@ -76,20 +76,33 @@ server {
     root /var/www/html;
     index index.html;
 
-    location / {
-        try_files \$uri \$uri/ /index.html;
+    # MIME types importantes
+    include /etc/nginx/mime.types;
+    types {
+        application/javascript js mjs;
+        text/css css;
     }
 
-    location /editor/ {
-        alias /var/www/html/editor/;
-        try_files \$uri \$uri/ /editor/index.html;
+    # Pagina principal
+    location = / {
+        try_files /index.html =404;
     }
 
-    location /shell/ {
-        alias /var/www/html/shell/;
+    # Shell
+    location /shell {
+        alias /var/www/html/shell;
+        index index.html;
         try_files \$uri \$uri/ /shell/index.html;
     }
 
+    # Editor
+    location /editor {
+        alias /var/www/html/editor;
+        index index.html;
+        try_files \$uri \$uri/ /editor/index.html;
+    }
+
+    # API proxy al agente Python
     location /api/ {
         proxy_pass http://127.0.0.1:10002/;
         proxy_http_version 1.1;
