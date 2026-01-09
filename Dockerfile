@@ -7,7 +7,7 @@
 FROM node:22-alpine AS frontend-builder
 
 # Cache buster - cambiar este valor para forzar rebuild
-ARG CACHE_BUST=v10
+ARG CACHE_BUST=v11
 
 WORKDIR /app
 
@@ -78,13 +78,7 @@ server {
     server_name _;
     root /var/www/html;
     index index.html;
-
-    # MIME types importantes
     include /etc/nginx/mime.types;
-    types {
-        application/javascript js mjs;
-        text/css css;
-    }
 
     # Pagina principal
     location = / {
@@ -96,7 +90,6 @@ server {
         alias /var/www/html/shell;
         index index.html;
         try_files \$uri \$uri/ /shell/index.html;
-        # Force browser to upgrade HTTP to HTTPS
         add_header Content-Security-Policy "upgrade-insecure-requests" always;
     }
 
@@ -105,44 +98,11 @@ server {
         alias /var/www/html/editor;
         index index.html;
         try_files \$uri \$uri/ /editor/index.html;
-        # Force browser to upgrade HTTP to HTTPS
         add_header Content-Security-Policy "upgrade-insecure-requests" always;
     }
 
-    # API root - handle GET requests (SDK connectivity check)
-    location = /api/ {
-        # For GET: return agent info (SDK makes GET to check connectivity)
-        limit_except POST {
-            add_header Content-Type "application/json" always;
-            add_header Access-Control-Allow-Origin "*" always;
-            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
-            add_header Access-Control-Allow-Headers "*" always;
-            return 200 '{"jsonrpc":"2.0","result":{"status":"ready","name":"A2A Agent"},"id":null}';
-        }
-
-        # For POST: proxy to agent
-        proxy_pass http://127.0.0.1:10002/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header Content-Type "application/json";
-        proxy_buffering off;
-        proxy_read_timeout 86400s;
-        add_header Access-Control-Allow-Origin "*" always;
-    }
-
-    # API proxy - all other paths (agent-card, etc)
+    # API proxy al agente Python
     location /api/ {
-        # Handle OPTIONS for CORS preflight
-        if (\$request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin "*";
-            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
-            add_header Access-Control-Allow-Headers "*";
-            return 204;
-        }
-
         proxy_pass http://127.0.0.1:10002/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -152,10 +112,21 @@ server {
         proxy_buffering off;
         proxy_read_timeout 86400s;
 
-        # CORS headers for responses
+        # CORS headers
         add_header Access-Control-Allow-Origin "*" always;
         add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
         add_header Access-Control-Allow-Headers "*" always;
+
+        # Intercept 405 from agent and return valid JSON
+        proxy_intercept_errors on;
+        error_page 405 = @api_get_handler;
+    }
+
+    # Handler for GET requests that agent rejects with 405
+    location @api_get_handler {
+        default_type application/json;
+        add_header Access-Control-Allow-Origin "*" always;
+        return 200 '{"jsonrpc":"2.0","result":{"status":"ready"},"id":null}';
     }
 }
 EOF
