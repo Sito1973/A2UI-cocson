@@ -120,9 +120,9 @@ stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 
 [program:agent]
-command=python -m __main__
+command=python __main__.py --host 0.0.0.0 --port 10002
 directory=/app/restaurant_finder
-environment=GEMINI_API_KEY="%(ENV_GEMINI_API_KEY)s",HOST="0.0.0.0",PORT="10002"
+environment=GEMINI_API_KEY="%(ENV_GEMINI_API_KEY)s"
 autostart=true
 autorestart=true
 stdout_logfile=/dev/stdout
