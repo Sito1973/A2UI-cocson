@@ -1,0 +1,36 @@
+# Dockerfile para el agente Python (restaurant_finder)
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar uv para gestionar dependencias Python
+RUN pip install uv
+
+# Copiar la extension a2ui
+COPY a2a_agents/python/a2ui_extension /app/a2ui_extension
+
+# Copiar el agente restaurant_finder
+COPY samples/agent/adk/restaurant_finder /app/restaurant_finder
+
+# Instalar dependencias
+WORKDIR /app/a2ui_extension
+RUN uv pip install --system -e .
+
+WORKDIR /app/restaurant_finder
+RUN uv pip install --system -e .
+
+# Puerto del agente A2A
+EXPOSE 10002
+
+# Variables de entorno requeridas
+ENV GEMINI_API_KEY=""
+ENV HOST="0.0.0.0"
+ENV PORT="10002"
+
+# Comando para iniciar el agente
+CMD ["python", "-m", "__main__"]

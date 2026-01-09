@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Agente Python (Restaurant Finder)
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: a2ui-agent
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - HOST=0.0.0.0
+      - PORT=10002
+    ports:
+      - "10002:10002"
+    restart: unless-stopped
+    networks:
+      - a2ui-network
+
+  # Frontend (Editor + Shell)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: a2ui-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - agent
+    restart: unless-stopped
+    networks:
+      - a2ui-network
+
+networks:
+  a2ui-network:
+    driver: bridge
