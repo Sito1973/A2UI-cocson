@@ -20,6 +20,9 @@ import { AppConfig } from "./types.js";
 const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
 const baseUrl = isProduction ? window.location.origin : '';
 
+// Debug - Build v4
+console.log('[A2UI Config] isProduction:', isProduction, 'baseUrl:', baseUrl);
+
 export const config: AppConfig = {
   key: "restaurant",
   title: "Restaurant Finder",
