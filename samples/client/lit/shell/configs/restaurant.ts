@@ -16,11 +16,15 @@
 
 import { AppConfig } from "./types.js";
 
+// Detectar si estamos en produccion (no localhost)
+const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+const baseUrl = isProduction ? window.location.origin : '';
+
 export const config: AppConfig = {
   key: "restaurant",
   title: "Restaurant Finder",
-  heroImage: "/hero.png",
-  heroImageDark: "/hero-dark.png",
+  heroImage: `${baseUrl}/shell/hero.png`,
+  heroImageDark: `${baseUrl}/shell/hero-dark.png`,
   background: `radial-gradient(
     at 0% 0%,
     light-dark(rgba(161, 196, 253, 0.3), rgba(6, 182, 212, 0.15)) 0px,
@@ -53,5 +57,5 @@ export const config: AppConfig = {
     "Looking for open tables...",
     "Almost there...",
   ],
-  serverUrl: "http://localhost:10002",
+  serverUrl: isProduction ? `${window.location.origin}/api` : "http://localhost:10002",
 };
