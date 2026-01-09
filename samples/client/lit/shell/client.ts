@@ -18,6 +18,27 @@ import { Part, SendMessageSuccessResponse, Task } from "@a2a-js/sdk";
 import { A2AClient } from "@a2a-js/sdk/client";
 import { v0_8 } from "@a2ui/lit";
 
+// Monkey-patch global fetch to force HTTPS in production
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  let url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+  // Force HTTPS for non-localhost URLs
+  if (url && !url.includes('localhost') && !url.includes('127.0.0.1') && url.startsWith('http://')) {
+    url = url.replace('http://', 'https://');
+    console.log('[Global Fetch] Forced HTTPS:', url);
+    if (typeof input === 'string') {
+      input = url;
+    } else if (input instanceof URL) {
+      input = new URL(url);
+    } else {
+      input = new Request(url, input);
+    }
+  }
+
+  return originalFetch(input, init);
+};
+
 const A2UI_MIME_TYPE = "application/json+a2ui";
 
 export class A2UIClient {
