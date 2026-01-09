@@ -26,13 +26,16 @@ import { createA2UIPrompt, createImageParsePrompt } from "./prompts";
 let catalog: v0_8.Types.ClientCapabilitiesDynamic | null = null;
 let ai: GoogleGenAI;
 export const plugin = (): Plugin => {
-  if (!("GEMINI_API_KEY" in process.env && process.env.GEMINI_KEY !== "")) {
-    throw new Error("No GEMINI_API_KEY environment variable; add one to .env");
-  }
+  // Solo validar API key en modo desarrollo, no durante build
+  const isBuild = process.argv.includes('build');
 
   return {
     name: "custom-gemini-handler",
     configureServer(server: ViteDevServer) {
+      // Validar API key solo cuando se configura el servidor (modo dev)
+      if (!("GEMINI_API_KEY" in process.env && process.env.GEMINI_API_KEY !== "")) {
+        throw new Error("No GEMINI_API_KEY environment variable; add one to .env");
+      }
       server.middlewares.use(
         "/a2ui",
         async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
